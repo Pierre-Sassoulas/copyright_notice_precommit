@@ -79,9 +79,12 @@ class CopyrightNoticeChecker:
                 if not CopyrightNoticeChecker.file_contains_valid_notice(
                     filepath, notice_pattern
                 ):
-                    logging.warning(
-                        "File %s does not contain a valid copyright notice.", filepath
-                    )
+                    logging.warning("Added copyright notice to %s", filepath)
+                    with open(filepath, "r+b") as to_fix:
+                        content = to_fix.read()
+                        content = notice_pattern + content
+                        to_fix.seek(0)
+                        to_fix.write(content)
                     ret = False
             except SourceCodeFileNotFoundError:
                 raise
