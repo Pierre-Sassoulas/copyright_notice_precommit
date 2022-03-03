@@ -39,7 +39,11 @@ class CopyrightNoticeChecker:
 
     @staticmethod
     def check_files_have_notice(
-        filenames: Sequence[str], notice_path: str, *, enforce_all: bool = False
+        filenames: Sequence[str],
+        notice_path: str,
+        *,
+        enforce_all: bool = False,
+        autofix: bool = False
     ) -> bool:
         """
         Check if a set of files contains the required copyright notice.
@@ -80,11 +84,12 @@ class CopyrightNoticeChecker:
                     filepath, notice_pattern
                 ):
                     logging.warning("Added copyright notice to %s", filepath)
-                    with open(filepath, "r+b") as to_fix:
-                        content = to_fix.read()
-                        content = notice_pattern + content
-                        to_fix.seek(0)
-                        to_fix.write(content)
+                    if autofix:
+                        with open(filepath, "r+b") as to_fix:
+                            content = to_fix.read()
+                            content = notice_pattern + content
+                            to_fix.seek(0)
+                            to_fix.write(content)
                     ret = False
             except SourceCodeFileNotFoundError:
                 raise
@@ -94,7 +99,11 @@ class CopyrightNoticeChecker:
 
     @staticmethod
     def check_files_have_notice_with_retcode(
-        filenames: Sequence[str], notice_path: str, *, enforce_all: bool = False
+        filenames: Sequence[str],
+        notice_path: str,
+        *,
+        enforce_all: bool = False,
+        autofix: bool = False
     ) -> int:
         """
         Check if a set of files contains the required copyright notice.
@@ -108,7 +117,10 @@ class CopyrightNoticeChecker:
         """
         try:
             has_notice = CopyrightNoticeChecker.check_files_have_notice(
-                filenames=filenames, notice_path=notice_path, enforce_all=enforce_all
+                filenames=filenames,
+                notice_path=notice_path,
+                enforce_all=enforce_all,
+                autofix=autofix,
             )
             return 0 if has_notice else 1
         except Exception as exc:  # pylint: disable=broad-except
@@ -134,10 +146,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         action="store_true",
         help="Enforce all files are checked, not just staged files.",
     )
+    parser.add_argument(
+        "--autofix",
+        default=False,
+        help="Permit to add the notice automatically.",
+    )
     args = parser.parse_args(argv)
 
     return CopyrightNoticeChecker.check_files_have_notice_with_retcode(
-        args.filenames, args.notice, enforce_all=args.enforce_all
+        args.filenames, args.notice, enforce_all=args.enforce_all, autofix=args.autofix
     )
 
 
